@@ -13,12 +13,13 @@
 
 請先把終端調整至至少 **73 欄 × 16 行**；高度達 29 行時可顯示完整畫面。按 `Ctrl+C` 停止。
 
+到 [最新版下載頁](https://github.com/oyzjerry/ASCII-Bad-Apple/releases/latest) 選擇適合系統的檔案。此倉庫目前是私人倉庫，下載前需登入有存取權的 GitHub 帳號。
+
 ### Windows：不需要 Python
 
-在 **CMD** 下載 [badapple-windows.ps1](badapple-windows.ps1)，並用 Windows 內建的 PowerShell 執行：
+從 Release 下載 [badapple-windows.ps1](https://github.com/oyzjerry/ASCII-Bad-Apple/releases/latest/download/badapple-windows.ps1)，在檔案所在資料夾開啟 **CMD**，再用 Windows 內建的 PowerShell 執行：
 
 ```cmd
-curl.exe -fL https://raw.githubusercontent.com/oyzjerry/ASCII-Bad-Apple/main/badapple-windows.ps1 -o badapple-windows.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\badapple-windows.ps1
 ```
 
@@ -26,16 +27,22 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\badapple-windows.ps1
 
 ### Linux：Python 3
 
-下載 [badapple.pyz](badapple.pyz)，再以 Python 3 執行：
+從 Release 下載 [badapple.pyz](https://github.com/oyzjerry/ASCII-Bad-Apple/releases/latest/download/badapple.pyz)，再以 Python 3 執行：
 
 ```sh
-curl -fL https://raw.githubusercontent.com/oyzjerry/ASCII-Bad-Apple/main/badapple.pyz -o badapple.pyz
 python3 ./badapple.pyz
 ```
 
 這個約 15 MB 的檔案也包含畫格與音樂。音樂播放需要系統已有 `paplay`、`pw-play`、`aplay`、`ffplay` 或 `mpv` 其中一種工具；程式會自動選擇。若沒有音訊工具，可用 `python3 ./badapple.pyz --no-audio` 靜音播放。執行時不需要 Node 或 ffmpeg（除非 ffmpeg 是你選用的音訊工具）。
 
 > Windows 通常沒有預裝 Python，因此 Windows 建議使用 `.ps1`。已安裝 Python 3 的 Windows 也可執行同一份 `badapple.pyz`。
+
+若已安裝並登入 GitHub CLI，也能直接從私人倉庫用終端下載（依平台擇一）：
+
+```sh
+gh release download --repo oyzjerry/ASCII-Bad-Apple --pattern badapple-windows.ps1
+gh release download --repo oyzjerry/ASCII-Bad-Apple --pattern badapple.pyz
+```
 
 ## 播放選項
 
