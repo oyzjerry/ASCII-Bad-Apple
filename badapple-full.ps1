@@ -1,11 +1,12 @@
 # Bad Apple!! terminal player, converted from the user-provided MP4.
-# Native 30 fps, complete video from the first frame. No runtime dependencies.
+# Native 30 fps, complete video from the first frame. Audio uses the included WAV file.
 # Run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\badapple-full.ps1
 param(
     [ValidateRange(0.1, 4.0)][double]$Speed = 1.0,
     [ValidateRange(0.0, 9999.0)][double]$StartAt = 0.0,
     [ValidateRange(0.0, 9999.0)][double]$Duration = 0.0,
-    [switch]$Loop
+    [switch]$Loop,
+    [switch]$NoAudio
 )
 
 $data = @'
@@ -17815,6 +17816,18 @@ $last = if ($Duration -gt 0) {
 } else {
     $frames.Length
 }
+$audioPlayer = $null
+if (-not $NoAudio) {
+    if ($Speed -ne 1.0 -or $StartAt -ne 0.0) {
+        throw 'Audio stays in sync only at normal speed from the beginning. Add -NoAudio for speed or start-time changes.'
+    }
+    $audioPath = Join-Path $PSScriptRoot 'badapple-audio.wav'
+    if (-not (Test-Path -LiteralPath $audioPath)) {
+        throw 'Missing badapple-audio.wav next to the player. Add -NoAudio for silent playback.'
+    }
+    $audioPlayer = [System.Media.SoundPlayer]::new($audioPath)
+    $audioPlayer.Load()
+}
 if (-not [Console]::IsOutputRedirected) {
     if (-not ([System.Management.Automation.PSTypeName]'BadAppleConsoleVT').Type) {
         Add-Type -TypeDefinition @'
@@ -17850,11 +17863,13 @@ $selectedRows = if ($displayHeight -lt 28) {
         [int][Math]::Round($row * 27.0 / ($displayHeight - 1))
     })
 } else { @() }
-$clock = [System.Diagnostics.Stopwatch]::StartNew()
-$deadline = 0.0
+$clock = [System.Diagnostics.Stopwatch]::new()
 try {
     [Console]::Write(([string]$esc + '[?25l' + [string]$esc + '[2J'))
     do {
+        $deadline = 0.0
+        if ($audioPlayer) { $audioPlayer.Play() }
+        $clock.Restart()
         for ($i = $first; $i -lt $last; $i++) {
             $picture = $frames[$i]
             if ($displayHeight -lt 28) {
@@ -17870,5 +17885,9 @@ try {
         }
     } while ($Loop)
 } finally {
+    if ($audioPlayer) {
+        $audioPlayer.Stop()
+        $audioPlayer.Dispose()
+    }
     [Console]::Write(([string]$esc + '[?25h' + [Environment]::NewLine))
 }

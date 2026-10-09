@@ -9,7 +9,9 @@ import base64
 import ctypes
 import gzip
 import os
+from pathlib import Path
 import shutil
+import subprocess
 import sys
 import time
 
@@ -17824,17 +17826,59 @@ def enable_windows_ansi():
         raise RuntimeError("This CMD console cannot display ANSI animation")
 
 
+def start_audio(path):
+    if os.name == "nt":
+        import winsound
+
+        winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+        return None
+    players = [
+        ("paplay", ["paplay", str(path)]),
+        ("pw-play", ["pw-play", str(path)]),
+        ("aplay", ["aplay", "-q", str(path)]),
+        ("ffplay", ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", str(path)]),
+        ("mpv", ["mpv", "--no-video", "--really-quiet", str(path)]),
+    ]
+    for name, command in players:
+        if shutil.which(name):
+            return subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    raise RuntimeError("Linux audio needs paplay, pw-play, aplay, ffplay, or mpv. Use --no-audio for silent playback.")
+
+
+def stop_audio(process, enabled):
+    if not enabled:
+        return
+    if os.name == "nt":
+        import winsound
+
+        winsound.PlaySound(None, 0)
+    elif process is not None and process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Play the complete Bad Apple!! video as terminal ASCII")
     parser.add_argument("--speed", type=float, default=1.0, help="playback speed (default: 1.0)")
     parser.add_argument("--start-at", type=float, default=0.0, help="start time in seconds")
     parser.add_argument("--duration", type=float, default=0.0, help="seconds to play; 0 means to the end")
     parser.add_argument("--loop", action="store_true", help="repeat playback")
+    parser.add_argument("--no-audio", action="store_true", help="play the ASCII animation without music")
     args = parser.parse_args()
     if not 0.1 <= args.speed <= 4.0:
         parser.error("--speed must be between 0.1 and 4")
     if args.start_at < 0 or args.duration < 0:
         parser.error("--start-at and --duration must not be negative")
+    audio_path = Path(__file__).with_name("badapple-audio.wav")
+    if not args.no_audio:
+        if args.speed != 1.0 or args.start_at != 0.0:
+            parser.error("audio stays in sync only at normal speed from the beginning; add --no-audio")
+        if not audio_path.is_file():
+            parser.error("missing badapple-audio.wav next to the player; add --no-audio for silent playback")
     display_height = HEIGHT
     if sys.stdout.isatty():
         size = shutil.get_terminal_size()
@@ -17852,23 +17896,33 @@ def main():
     last = min(len(FRAMES), first + int(args.duration * FPS + 0.999999)) if args.duration else len(FRAMES)
     delay = 1.0 / (FPS * args.speed)
     out = sys.stdout.buffer
-    deadline = time.perf_counter()
+    audio_process = None
     try:
         out.write(b"\x1b[?25l\x1b[2J")
         out.flush()
         while True:
+            if not args.no_audio:
+                audio_process = start_audio(audio_path)
+            deadline = time.perf_counter()
             for index in range(first, last):
                 out.write(b"\x1b[H" + render_frames[index] + b"\x1b[J")
                 out.flush()
+                if audio_process is not None and audio_process.poll() is not None and index < len(FRAMES) - FPS:
+                    raise RuntimeError("The Linux audio player stopped unexpectedly. Use --no-audio or check your audio device.")
                 deadline += delay
                 remaining = deadline - time.perf_counter()
                 if remaining > 0:
                     time.sleep(remaining)
+            stop_audio(audio_process, not args.no_audio)
+            audio_process = None
             if not args.loop:
                 break
     except KeyboardInterrupt:
         pass
+    except RuntimeError as exc:
+        parser.exit(1, f"Audio error: {exc}\n")
     finally:
+        stop_audio(audio_process, not args.no_audio)
         out.write(b"\x1b[?25h\r\n")
         out.flush()
 
