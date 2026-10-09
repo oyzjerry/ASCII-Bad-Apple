@@ -4,3 +4,4 @@
 *.cmd text eol=crlf
 *.gif binary
 *.wav binary
+*.pyz binary

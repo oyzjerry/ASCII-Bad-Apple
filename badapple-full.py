@@ -13,7 +13,9 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
+import zipfile
 
 
 FPS = 30
@@ -17861,6 +17863,25 @@ def stop_audio(process, enabled):
             process.wait()
 
 
+def prepare_audio():
+    archive_or_script = Path(sys.argv[0]).resolve()
+    alongside = archive_or_script.with_name("badapple-audio.wav")
+    if alongside.is_file():
+        return alongside, None
+    if not zipfile.is_zipfile(archive_or_script):
+        raise RuntimeError("Missing badapple-audio.wav next to the player. Use --no-audio for silent playback.")
+    temporary = tempfile.TemporaryDirectory(prefix="badapple-audio-")
+    extracted = Path(temporary.name) / "badapple-audio.wav"
+    try:
+        with zipfile.ZipFile(archive_or_script) as archive:
+            with archive.open("badapple-audio.wav") as source, extracted.open("wb") as target:
+                shutil.copyfileobj(source, target)
+    except BaseException:
+        temporary.cleanup()
+        raise
+    return extracted, temporary
+
+
 def main():
     parser = argparse.ArgumentParser(description="Play the complete Bad Apple!! video as terminal ASCII")
     parser.add_argument("--speed", type=float, default=1.0, help="playback speed (default: 1.0)")
@@ -17873,12 +17894,9 @@ def main():
         parser.error("--speed must be between 0.1 and 4")
     if args.start_at < 0 or args.duration < 0:
         parser.error("--start-at and --duration must not be negative")
-    audio_path = Path(__file__).with_name("badapple-audio.wav")
     if not args.no_audio:
         if args.speed != 1.0 or args.start_at != 0.0:
             parser.error("audio stays in sync only at normal speed from the beginning; add --no-audio")
-        if not audio_path.is_file():
-            parser.error("missing badapple-audio.wav next to the player; add --no-audio for silent playback")
     display_height = HEIGHT
     if sys.stdout.isatty():
         size = shutil.get_terminal_size()
@@ -17897,7 +17915,10 @@ def main():
     delay = 1.0 / (FPS * args.speed)
     out = sys.stdout.buffer
     audio_process = None
+    temporary_audio = None
     try:
+        if not args.no_audio:
+            audio_path, temporary_audio = prepare_audio()
         out.write(b"\x1b[?25l\x1b[2J")
         out.flush()
         while True:
@@ -17925,6 +17946,8 @@ def main():
         stop_audio(audio_process, not args.no_audio)
         out.write(b"\x1b[?25h\r\n")
         out.flush()
+        if temporary_audio is not None:
+            temporary_audio.cleanup()
 
 
 if __name__ == "__main__":

@@ -1,78 +1,70 @@
 # Bad Apple!! 終端 ASCII 播放器
 
-這個版本由提供的 `badapple.mp4` 製作，從原片第一格開始播放完整動畫與音樂。畫面不會在最下面顯示進度狀態列。
+由提供的 `badapple.mp4` 製作，從片頭播放完整動畫與音樂。畫面沒有底部狀態列。
 
-## 播放資訊
-
-| 項目 | 說明 |
+| 項目 | 內容 |
 | --- | --- |
-| 片名 | Bad Apple!! |
 | 全長 | 約 03:39（219.07 秒） |
-| 影格 | 共 6,572 格，30 fps |
-| 畫面 | 72 × 28 個 ASCII 字元；終端較矮時會自動縮減行數 |
-| 音樂 | 同資料夾的 `badapple-audio.wav`，由原片音軌轉成 32 kHz 單聲道 WAV；約 14 MB |
-| 停止 | 按 `Ctrl+C`；預設播放一次後自動結束 |
+| 畫格 | 6,572 格，30 fps |
+| 畫面 | 72 × 28 個 ASCII 字元；終端較矮時自動縮減行數 |
+| 停止 | `Ctrl+C`；預設播放一次 |
 
-原本狀態列中的 `00:22/03:39` 表示當時播到 22 秒、全片約 3 分 39 秒；`687/6572` 表示當時第 687 格、全片共 6,572 格。這些即時數字已從播放畫面移除。
+原本狀態列中的 `00:22/03:39` 表示當時播放到 22 秒；`687/6572` 表示當時第 687 格。這些即時數字已從畫面移除。[觀看開頭預覽](badapple-opening-preview.gif)。
 
-## 執行方式
+## 同一檔案在 Windows 與 Linux 執行
 
-### Windows CMD
+**推薦下載 [badapple.pyz](badapple.pyz)。** 這是約 14.8 MB 的單檔 Python 程式，裡面已有完整畫格與音樂；播放時會自動判斷系統、選擇音訊方式，並在結束後清除暫存音檔。兩邊都需要 Python 3，不需要 Node 或執行時的 ffmpeg。
 
-將 `badapple-full.cmd`、`badapple-full.ps1` 和 `badapple-audio.wav` 放在同一個資料夾，在 CMD 執行：
+Windows CMD：
+
+```cmd
+py -3 badapple.pyz
+```
+
+若電腦有 Python 3 但沒有 `py` 啟動器，改用 `python badapple.pyz`。
+
+Linux 終端：
+
+```sh
+python3 ./badapple.pyz
+```
+
+Windows 音訊使用內建的 WAV 播放功能。Linux 需要系統上有 `paplay`、`pw-play`、`aplay`、`ffplay` 或 `mpv` 其中一種；程式會自動尋找。沒有音訊工具時可以使用 `--no-audio` 靜音播放。
+
+| 功能 | Windows CMD | Linux |
+| --- | --- | --- |
+| 循環播放 | `py -3 badapple.pyz --loop` | `python3 ./badapple.pyz --loop` |
+| 靜音 | `py -3 badapple.pyz --no-audio` | `python3 ./badapple.pyz --no-audio` |
+| 從片頭播放 10 秒（有音樂） | `py -3 badapple.pyz --duration 10` | `python3 ./badapple.pyz --duration 10` |
+| 0.75 倍速 | `py -3 badapple.pyz --no-audio --speed 0.75` | `python3 ./badapple.pyz --no-audio --speed 0.75` |
+| 從 60 秒開始播 10 秒 | `py -3 badapple.pyz --no-audio --start-at 60 --duration 10` | `python3 ./badapple.pyz --no-audio --start-at 60 --duration 10` |
+
+調速或從中途開始時音訊無法同步，因此須加 `--no-audio`。終端至少需要 73 欄、16 行；達到 29 行時可完整顯示原本的 72 × 28 畫面。
+
+## Windows 不安裝 Python 的方式
+
+將 `badapple-full.cmd`、`badapple-full.ps1` 和 `badapple-audio.wav` 放在同一資料夾，在 CMD 執行：
 
 ```cmd
 badapple-full.cmd
 ```
 
-CMD 版本使用 Windows PowerShell，無需安裝 Python、Node 或 ffmpeg。
-
-### Windows PowerShell
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\badapple-full.ps1
-```
-
-同樣需要把 `badapple-audio.wav` 放在腳本旁邊。
-
-### Linux 終端
-
-將 `badapple-full.py` 和 `badapple-audio.wav` 放在同一個資料夾，用 Python 3 執行：
-
-```sh
-python3 ./badapple-full.py
-```
-
-Python 腳本只使用標準函式庫。Linux 播放音訊時還需要系統上有 `paplay`、`pw-play`、`aplay`、`ffplay` 或 `mpv` 其中一種；腳本會自動尋找。在已安裝 Python 3 的 Windows CMD，也能執行 `py -3 badapple-full.py`。
-
-## 選項
-
-| 功能 | CMD／PowerShell | Linux／Python |
-| --- | --- | --- |
-| 循環播放 | `badapple-full.cmd -Loop` | `python3 ./badapple-full.py --loop` |
-| 靜音播放 | `badapple-full.cmd -NoAudio` | `python3 ./badapple-full.py --no-audio` |
-| 以 0.75 倍速播放 | `badapple-full.cmd -NoAudio -Speed 0.75` | `python3 ./badapple-full.py --no-audio --speed 0.75` |
-| 從 60 秒開始播 10 秒 | `badapple-full.cmd -NoAudio -StartAt 60 -Duration 10` | `python3 ./badapple-full.py --no-audio --start-at 60 --duration 10` |
-
-調速或從中途開始時，內建音訊無法同步，必須使用靜音選項；`-Duration`／`--duration` 從片頭播放時仍可帶音樂。沒有音檔或 Linux 音訊工具時也可以選擇靜音。終端至少要有 73 欄、16 行；達到 29 行時可完整顯示 72 × 28 的畫面。[觀看開頭 8 秒預覽](badapple-opening-preview.gif)。
+這個入口使用 Windows PowerShell。可加 `-Loop` 循環、`-NoAudio` 靜音；調速或從中途開始需同時加 `-NoAudio`。
 
 ## 從 GitHub 下載
 
-上傳後將以下網址中的 `USER/REPO` 換成實際倉庫名稱。CMD 需要下載三個檔案：
+公開上傳後，把 `USER/REPO` 換成實際倉庫名稱。單檔版只需下載 `badapple.pyz`：
 
 ```cmd
-curl.exe -L https://raw.githubusercontent.com/USER/REPO/main/badapple-full.cmd -o badapple-full.cmd
-curl.exe -L https://raw.githubusercontent.com/USER/REPO/main/badapple-full.ps1 -o badapple-full.ps1
-curl.exe -L https://raw.githubusercontent.com/USER/REPO/main/badapple-audio.wav -o badapple-audio.wav
-badapple-full.cmd
+curl.exe -L https://raw.githubusercontent.com/USER/REPO/main/badapple.pyz -o badapple.pyz
+py -3 badapple.pyz
 ```
 
-Linux 需要下載 Python 腳本與音檔：
+Linux：
 
 ```sh
-curl -L https://raw.githubusercontent.com/USER/REPO/main/badapple-full.py -o badapple-full.py
-curl -L https://raw.githubusercontent.com/USER/REPO/main/badapple-audio.wav -o badapple-audio.wav
-python3 ./badapple-full.py
+curl -L https://raw.githubusercontent.com/USER/REPO/main/badapple.pyz -o badapple.pyz
+python3 ./badapple.pyz
 ```
 
-目前只有本機成品，尚未上傳 GitHub。公開發布內嵌的影片畫格與音樂前，請先確認原片的散布權利。
+倉庫中的 `badapple-full.py` 和 `badapple-audio.wav` 是單檔版的來源；修改後可執行 `python3 build_pyz.py` 重新打包。這個 Git 倉庫目前只有本機提交，尚未上傳 GitHub。公開發布畫格與音樂前，請先確認原片的散布權利。
