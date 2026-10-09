@@ -44,6 +44,24 @@ gh release download --repo oyzjerry/ASCII-Bad-Apple --pattern badapple-windows.p
 gh release download --repo oyzjerry/ASCII-Bad-Apple --pattern badapple.pyz
 ```
 
+### 倉庫公開後：用 curl 下載並播放
+
+以下網址固定指向最新的正式 Release。倉庫仍是私人狀態時，未經驗證的 `curl` 無法下載；目前請使用上面的下載頁或已登入的 GitHub CLI。
+
+Windows CMD：
+
+```cmd
+curl.exe -fL https://github.com/oyzjerry/ASCII-Bad-Apple/releases/latest/download/badapple-windows.ps1 -o badapple-windows.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\badapple-windows.ps1
+```
+
+Linux 終端：
+
+```sh
+curl -fL https://github.com/oyzjerry/ASCII-Bad-Apple/releases/latest/download/badapple.pyz -o badapple.pyz
+python3 ./badapple.pyz
+```
+
 ## 播放選項
 
 | 功能 | Windows CMD | Linux |
